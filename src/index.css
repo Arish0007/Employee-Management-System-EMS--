@@ -111,24 +111,11 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 }
 
 .profile-avatar { width: 38px; height: 38px; }
-.profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
 .avatar { width: 30px; height: 30px; font-size: 11px; }
 
 .account-copy { display: flex; flex-direction: column; gap: 2px; }
 .account-name { font-size: 12px; font-weight: 650; }
 .account-role { color: var(--muted); font-size: 10px; }
-
-.text-button {
-  padding: 4px 0;
-  border: 0;
-  background: transparent;
-  color: var(--accent);
-  font-size: 10px;
-  font-weight: 600;
-}
-
-.text-button:hover { text-decoration: underline; }
-.remove-photo-button { color: var(--muted); }
 
 .logout-button, .theme-toggle {
   min-height: 35px;
@@ -149,18 +136,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .theme-toggle { display: grid; width: 36px; place-items: center; padding: 0; }
 .theme-toggle:hover { border-color: var(--accent); color: var(--accent); }
 .theme-toggle svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; }
-
-.photo-error {
-  position: absolute;
-  right: 0;
-  z-index: 1;
-  padding: 6px 9px;
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  background: var(--surface);
-  color: var(--danger);
-  font-size: 11px;
-}
 
 .page-intro { margin: 30px 0 22px; }
 .eyebrow { margin: 0 0 6px; color: var(--muted); font-size: 10px; font-weight: 650; letter-spacing: .08em; }
@@ -357,7 +332,6 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 
 @media (max-width: 420px) {
   .account-copy { min-width: 65px; }
-  .photo-button { font-size: 9px; }
   .section-heading { align-items: flex-start; }
   .comment-form, .completion-form { flex-direction: column; }
   .comment-form .task-action-button, .completion-form .task-action-button { width: 100%; }

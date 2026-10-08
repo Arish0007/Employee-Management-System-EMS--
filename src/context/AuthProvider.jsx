@@ -1,6 +1,11 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { AuthContext } from './AuthContext'
 import { getLocalStorage } from '../utils/LocalStorage'
+import {
+  loadEmployeesFromFile,
+  saveUpdatedEmployees,
+  saveUpdatedEmployeesLocally
+} from '../utils/UpdatedLocalStorage'
 
 const getTaskCounts = (tasks) =>
   tasks.reduce((counts, task) => {
@@ -12,10 +17,46 @@ const getTaskCounts = (tasks) =>
   }, { active: 0, newTask: 0, completed: 0, failed: 0 })
 
 const AuthProvider = ({ children }) => {
-  const [userData, setUserData] = useState(() => getLocalStorage())
+  const [initialUserData] = useState(() => getLocalStorage())
+  const [userData, setUserData] = useState(initialUserData)
+  const [storageError, setStorageError] = useState('')
+
+  useEffect(() => {
+    let cancelled = false
+
+    const initializeFileStorage = async () => {
+      try {
+        const savedEmployees = await loadEmployeesFromFile()
+        if (cancelled) return
+
+        if (savedEmployees === null) {
+          await saveUpdatedEmployees(initialUserData.employees)
+        } else {
+          saveUpdatedEmployeesLocally(savedEmployees)
+          setUserData((current) => ({ ...current, employees: savedEmployees }))
+        }
+        if (!cancelled) setStorageError('')
+      } catch (error) {
+        console.error('Unable to sync employee data file:', error)
+        if (!cancelled) {
+          setStorageError('Could not connect to the employee data file. Start the local API with "npm run server"; changes are only saved in this browser until it is running.')
+        }
+      }
+    }
+
+    initializeFileStorage()
+    return () => {
+      cancelled = true
+    }
+  }, [initialUserData])
 
   const saveEmployees = (employees) => {
-    localStorage.setItem('employees', JSON.stringify(employees))
+    saveUpdatedEmployees(employees)
+      .then(() => setStorageError(''))
+      .catch((error) => {
+        console.error('Unable to save employee data file:', error)
+        setStorageError('The browser copy was saved, but the employee data file could not be updated. Check that "npm run server" is running.')
+      })
     setUserData((current) => ({ ...current, employees }))
   }
 
@@ -181,7 +222,6 @@ const AuthProvider = ({ children }) => {
   const removeEmployee = (employeeId) => {
     const employees = userData.employees.filter((user) => String(user.id) !== String(employeeId))
     saveEmployees(employees)
-    localStorage.removeItem(`profilePhoto:employee:${employeeId}`)
   }
 
   return (
@@ -198,6 +238,7 @@ const AuthProvider = ({ children }) => {
       toggleEmployeeActive,
       removeEmployee
     }}>
+      {storageError && <p className="storage-error" role="alert">{storageError}</p>}
       {children}
     </AuthContext.Provider>
   )

@@ -1,3 +1,5 @@
+import { readUpdatedEmployees, saveUpdatedEmployeesLocally } from './UpdatedLocalStorage'
+
 const employees = [
   {
     id: 1,
@@ -325,16 +327,16 @@ const admin = [
 
 export const setLocalStorage = () => {
   const normalizedEmployees = normalizeEmployees(employees)
-  localStorage.setItem('employees', JSON.stringify(normalizedEmployees))
+  saveUpdatedEmployeesLocally(normalizedEmployees)
   localStorage.setItem('admin', JSON.stringify(admin))
 }
 
 export const getLocalStorage = () => {
-  const storedEmployees = readStoredArray('employees', employees)
+  const storedEmployees = readUpdatedEmployees(employees)
   const storedAdmin = readStoredArray('admin', admin)
   const normalizedEmployees = normalizeEmployees(storedEmployees)
 
-  localStorage.setItem('employees', JSON.stringify(normalizedEmployees))
+  saveUpdatedEmployeesLocally(normalizedEmployees)
   localStorage.setItem('admin', JSON.stringify(storedAdmin))
   return {
     employees: normalizedEmployees,
