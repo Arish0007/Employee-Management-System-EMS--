@@ -1,83 +1,125 @@
-import React, { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import Login from './components/Auth/Login'
 import EmployeeDashboard from './components/Dashboard/EmployeeDashboard'
 import AdminDashboard from './components/Dashboard/AdminDashboard'
-import { setLocalStorage, getLocalStorage } from './utils/LocalStorage'
-import { useContext } from 'react'
-import { AuthContext } from './context/AuthProvider'
+import { AuthContext } from './context/AuthContext'
 
+const readStoredSession = () => {
+  const storedSession = localStorage.getItem('loggedInUser')
 
-const App = () => {
-
- 
- useEffect(() => {
-
-  const loggedInUser = localStorage.getItem('loggedInUser')
-  if (loggedInUser) {
-    const userData = JSON.parse(loggedInUser)
-    setUser(userData.role)
-    setloggedInUserData(userData.data)
+  if (!storedSession) {
+    return { user: null, error: '' }
   }
-}, [])
- 
-  const [user, setUser] = useState(null)
-  const [loggedInUserData, setloggedInUserData] = useState(null )
-   const [userData, setUserData] = useContext(AuthContext)
-  useEffect(() => {
-    const loggedInUser = localStorage.getItem('loggedInUser')
-    if(loggedInUser) {
-      console.log('user is logged in')
+
+  let session
+  try {
+    session = JSON.parse(storedSession)
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      return { user: null, error: 'Saved login session is invalid. Please sign in again.' }
     }
-
-  },[])
-
-  
-   
-  const handleLogin = (email, password) => {
-   
-
-  if (email === 'admin@me.com' && password === '123') {
-
-    setUser('admin')
-    setloggedInUserData(authData.admin[0])
-
-    localStorage.setItem(
-      'loggedInUser',
-      JSON.stringify({ role: 'admin' })
-    )
-
-    return
+    throw error
   }
 
-  if (userData) {
+  const role = session?.role
+  const id = session?.id ?? session?.data?.id
 
-    const employee = userData.find(
-      (e) => email === e.email && password === e.password
-    )
-
-    if (employee) {
-
-      setUser('employee')
-      setloggedInUserData(employee)
-
-      localStorage.setItem(
-        'loggedInUser',
-        JSON.stringify({ role: 'employee' })
-      )
-
-      return
-    }
+  if (!['admin', 'employee'].includes(role) || id === undefined || id === null) {
+    return { user: null, error: 'Saved login session is incomplete. Please sign in again.' }
   }
 
-  alert('Incorrect email or password')
+  return { user: { role, id }, error: '' }
 }
 
+const App = () => {
+  const { admin, employees } = useContext(AuthContext)
+  const [savedSession, setSavedSession] = useState(() => readStoredSession())
+  const [theme, setTheme] = useState(() =>
+    localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'
+  )
+  const session = savedSession.user
+  const userList = session?.role === 'admin' ? admin : employees
+  const sessionAccount = session
+    ? userList.find((item) => String(item.id) === String(session.id))
+    : null
+  const loggedInUserData = sessionAccount && !(session.role === 'employee' && sessionAccount.active === false)
+    ? sessionAccount
+    : null
 
+  const handleLogin = (email, password) => {
+    const normalizedEmail = email.trim().toLowerCase()
+    const adminUser = admin.find(
+      (item) => normalizedEmail === item.email.toLowerCase() && password === item.password
+    )
+    const employeeUser = adminUser
+      ? null
+      : employees.find(
+          (item) => item.active !== false && normalizedEmail === item.email.toLowerCase() && password === item.password
+        )
+    const authenticatedUser = adminUser ?? employeeUser
+
+    if (!authenticatedUser) {
+      return false
+    }
+
+    const role = adminUser ? 'admin' : 'employee'
+    const nextSession = { role, id: authenticatedUser.id }
+    localStorage.setItem('loggedInUser', JSON.stringify(nextSession))
+    setSavedSession({ user: nextSession, error: '' })
+    return true
+  }
+
+  const handleLogout = () => {
+    localStorage.removeItem('loggedInUser')
+    setSavedSession({ user: null, error: '' })
+  }
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    document.documentElement.style.colorScheme = theme
+    localStorage.setItem('theme', theme)
+  }, [theme])
+
+  const toggleTheme = () => {
+    setTheme((currentTheme) => currentTheme === 'dark' ? 'light' : 'dark')
+  }
+
+  const loginError =
+    savedSession.error ||
+    (session && sessionAccount?.active === false
+      ? 'This employee account has been paused. Please contact the administrator.'
+      : session && !loggedInUserData
+      ? 'The saved account no longer exists. Please sign in again.'
+      : '')
 
   return (
-    <div className='bg-[#1C1C1C]'> 
-    {!user ? <Login handleLogin={handleLogin}/> :''}
-    {user == 'admin' ? <AdminDashboard changeUser={setUser} data ={loggedInUserData}/> : (user == 'employee' ? <EmployeeDashboard changeUser={setUser} data={loggedInUserData }/> :null )}
+    <div className="app-shell">
+      {!loggedInUserData && (
+        <Login
+          handleLogin={handleLogin}
+          errorMessage={loginError}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
+      )}
+
+      {loggedInUserData && session.role === 'admin' && (
+        <AdminDashboard
+          changeUser={handleLogout}
+          data={loggedInUserData}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
+      )}
+
+      {loggedInUserData && session.role === 'employee' && (
+        <EmployeeDashboard
+          changeUser={handleLogout}
+          data={loggedInUserData}
+          theme={theme}
+          onToggleTheme={toggleTheme}
+        />
+      )}
     </div>
   )
 }

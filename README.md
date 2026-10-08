@@ -1,16 +1,27 @@
-# React + Vite
+# Employee Management System
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A React and Vite demo for managing employees and team assignments.
 
-Currently, two official plugins are available:
+## Features
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Separate administrator and employee dashboards
+- Create employee accounts, update employee details, pause/reactivate access, and remove accounts
+- Create, edit, reassign, and remove tasks
+- Employee task actions, rejection reasons, completion notes, and comments
+- A simple team workload summary
+- Profile photos and persisted light/dark themes
 
-## React Compiler
+## Run locally
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```sh
+npm install
+npm run dev
+```
 
-## Expanding the ESLint configuration
+Use `npm run lint` for lint checks and `npm run build` for a production build.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Storage and security
+
+This is a browser-only demo. Employee accounts, tasks, comments, and profile photos are stored in the browser's `localStorage`; they are not synchronized between users or devices. Demo passwords are stored in plaintext, so do not use real employee credentials or sensitive data. A production deployment needs server-side authentication, authorization, and persistent database storage.
+
+Removing an employee permanently removes their assigned tasks and employee profile photo.

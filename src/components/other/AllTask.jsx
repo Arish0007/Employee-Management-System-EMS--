@@ -1,40 +1,57 @@
-import React from 'react'
 import { useContext } from 'react'
-import { AuthContext } from '../../context/AuthProvider'
+import { AuthContext } from '../../context/AuthContext'
+
+const columns = [
+  { key: 'newTask', label: 'New' },
+  { key: 'active', label: 'In progress' },
+  { key: 'completed', label: 'Completed' },
+  { key: 'failed', label: 'Needs attention' }
+]
 
 const AllTask = () => {
+  const { employees } = useContext(AuthContext)
+  const teamTaskCount = employees.reduce((total, employee) => total + employee.tasks.length, 0)
 
-      const [userData, setUserData] =  useContext(AuthContext)
-
-
-      
   return (
-    <div id="taskList" className="p-5 bg-[#1c1c1c] mt-5 rounded ">
-
-      <div className="bg-red-400 mb-2 flex justify-between rounded px-4 py-2">
-            <h2 className='w-1/5 ' >Employee Name</h2>
-            <h3 className='w-1/5 '>New Task</h3>
-            <h5 className='w-1/5 '>Active Task</h5>
-             <h5 className='w-1/5 '>Completed</h5>
-             <h5 className='w-1/5 '>Failed</h5>
-        </div>  
-
-            <div className=''>
-                {userData.map((elem, idx)=>{
-            return (
-  <div className=" key={idx} border-2 border-emerald-400 mb-2 flex justify-between rounded px-4 py-2">
-            <h2 className='text-lg font-medium w-1/5 ' >{elem.firstName}</h2>
-            <h3 className='text-lg font-medium w-1/5 text-blue-600'>{elem.taskNumber.newTask}</h3>
-            <h5 className='text-lg font-medium w-1/5 text-yellow-400'>{elem.taskNumber.active}</h5>
-             <h5 className='text-lg font-medium w-1/5 text-white'>{elem.taskNumber.completed}</h5>
-             <h5 className='text-lg font-medium w-1/5 text-red-600'>{elem.taskNumber.failed}</h5>
+    <section className="panel team-panel">
+      <div className="section-heading">
+        <div>
+          <h2 className="section-title">Team workload</h2>
+          <p className="section-description">Task status across all employees.</p>
         </div>
-        )})}
-    
-            </div>
-    
-    </div>  
-   
+        <span className="task-total">{teamTaskCount} tasks</span>
+      </div>
+
+      <div className="table-scroll">
+        <table className="team-table">
+          <thead>
+            <tr>
+              <th scope="col">Employee</th>
+              {columns.map((column) => (
+                <th key={column.key} scope="col">{column.label}</th>
+              ))}
+              <th scope="col">Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {employees.map((employee) => (
+              <tr key={employee.id}>
+                <th scope="row">
+                  <span className="employee-cell">
+                    <span className="avatar">{employee.firstName?.charAt(0) || '?'}</span>
+                    <span>{employee.firstName}</span>
+                  </span>
+                </th>
+                {columns.map((column) => (
+                  <td key={column.key}>{employee.taskNumber[column.key]}</td>
+                ))}
+                <td className="total-cell">{employee.tasks.length}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
   )
 }
 

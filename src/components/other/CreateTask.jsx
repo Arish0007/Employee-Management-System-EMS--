@@ -1,145 +1,150 @@
-import React , { useState } from 'react'
-import { useContext } from 'react'
-import { AuthContext } from '../../context/AuthProvider'
+import { useContext, useState } from 'react'
+import { AuthContext } from '../../context/AuthContext'
 
 const CreateTask = () => {
+  const { employees, addTask } = useContext(AuthContext)
+  const [taskTitle, setTaskTitle] = useState('')
+  const [taskDescription, setTaskDescription] = useState('')
+  const [taskDate, setTaskDate] = useState('')
+  const [assignTo, setAssignTo] = useState('')
+  const [category, setCategory] = useState('')
+  const [feedback, setFeedback] = useState('')
+  const [error, setError] = useState(false)
 
+  const submitHandler = (event) => {
+    event.preventDefault()
 
-  const [userData, setUserData] =  useContext(AuthContext)
-  
+    const employee = employees.find((item) => String(item.id) === assignTo)
+    if (!employee) {
+      setError(true)
+      setFeedback('Select an employee before creating the assignment.')
+      return
+    }
 
-const [taskTitle, settaskTitle] = useState('')
-const [taskDescription, settaskDescription] = useState('')
-const [taskDate, settaskDate] = useState('')
-const [assignTo, setassignTo] = useState('')
-const [category, setcategory] = useState('')
+    try {
+      const wasAdded = addTask(employee.id, {
+        active: false,
+        newTask: true,
+        completed: false,
+        failed: false,
+        taskTitle: taskTitle.trim(),
+        taskDescription: taskDescription.trim(),
+        taskDate,
+        category: category.trim()
+      })
 
-const [newTask, setNewTask] = useState([])
-
-  const submitHandler = (e) => {
-    e.preventDefault()
-    setNewTask({taskTitle, taskDescription, taskDate, assignTo, category,active:false, newTask:true, completed:false, failed:false})
-  
-    const data = userData
-
-    data.forEach((elem) =>{
-      if(assignTo == elem.firstName){
-        elem.tasks.push(newTask)
-        elem.taskNumber.newTask = elem.taskNumber.newTask + 1
-        
+      if (!wasAdded) {
+        setError(true)
+        setFeedback('The selected employee could not be found. Please try again.')
+        return
       }
-    })
-      setUserData(data)
-        console.log(data);
+    } catch (saveError) {
+      console.error('Unable to create task:', saveError)
+      setError(true)
+      setFeedback('Could not save the assignment. Check browser storage and try again.')
+      return
+    }
 
-
-    settaskTitle('')
-    settaskDescription('')
-    settaskDate('')
-    setassignTo('') 
-    setcategory('')
+    setTaskTitle('')
+    setTaskDescription('')
+    setTaskDate('')
+    setAssignTo('')
+    setCategory('')
+    setError(false)
+    setFeedback('Assignment created.')
   }
 
   return (
-    <div className="p-5 mt-7 rounded">
-      
-      <form 
-      onSubmit={(e) => {
-        submitHandler(e)
-      }}
-      className="flex flex-wrap w-full items-start justify-between">
+    <section className="panel create-task-panel">
+      <div className="section-heading">
+        <div>
+          <h2 className="section-title">Create an assignment</h2>
+          <p className="section-description">Add the details and choose a teammate to assign it to.</p>
+        </div>
+      </div>
 
-        <div className="w-1/2">
-            <div>
-            <h3 className="text-sm text-gray-300 mb-1">
-              Task title
-            </h3>
-
+      <form onSubmit={submitHandler} className="create-task-form">
+        <div className="create-task-fields">
+          <div className="form-field">
+            <label className="field-label" htmlFor="task-title">Task title</label>
             <input
-            value={taskTitle}
-            onChange={(e) => {
-              settaskTitle(e.target.value)
-            }}
-              className="text-sm py-2 px-2 w-4/5 rounded outline-none bg-transparent border border-gray-400 mb-4"
-              placeholder="Task title"
+              id="task-title"
+              value={taskTitle}
+              onChange={(event) => setTaskTitle(event.target.value)}
+              className="form-input"
+              type="text"
+              placeholder="e.g. Prepare monthly report"
+              required
             />
-          </div>
 
-          <div>
-            <h3 className="text-sm text-gray-300 mb-1">
-              Date
-            </h3>
-
+            <label className="field-label" htmlFor="task-date">Due date</label>
             <input
-            value={taskDate}
-            onChange={(e) => {
-              settaskDate(e.target.value)
-            }}
-              className="text-sm py-2 px-2 w-4/5 rounded outline-none bg-transparent border border-gray-400 mb-4"
+              id="task-date"
+              value={taskDate}
+              onChange={(event) => setTaskDate(event.target.value)}
+              className="form-input"
               type="date"
+              required
             />
-          </div>
 
-          <div>
-            <h3 className="text-sm text-gray-300 mb-1">
-              Assign to
-            </h3>
-
-            <input
+            <label className="field-label" htmlFor="assign-to">Assign to</label>
+            <select
+              id="assign-to"
               value={assignTo}
-              onChange={(e) => {
-                setassignTo(e.target.value)
-              }}
-              className="text-sm py-2 px-2 w-4/5 rounded outline-none bg-transparent border border-gray-400 mb-4"
-              placeholder="Employee name"
-            />
-          </div>
+              onChange={(event) => setAssignTo(event.target.value)}
+              className="form-input form-select"
+              required
+            >
+              <option value="" disabled>
+                Assign To
+              </option>
+              {employees.filter((employee) => employee.active !== false).map((employee) => (
+                <option key={employee.id} value={String(employee.id)}>
+                  {employee.firstName}
+                </option>
+              ))}
+            </select>
 
-          <div>
-            <h3 className="text-sm text-gray-300 mb-1">
-              Category
-            </h3>
-
+            <label className="field-label" htmlFor="task-category">Category</label>
             <input
+              id="task-category"
               value={category}
-              onChange={(e) => {
-                setcategory(e.target.value)
-              }}
-              className="text-sm py-2 px-2 w-4/5 rounded outline-none bg-transparent border border-gray-400"
-              placeholder="design, dev, etc."
+              onChange={(event) => setCategory(event.target.value)}
+              className="form-input"
+              type="text"
+              placeholder="e.g. Design"
+              required
             />
           </div>
 
+          <div className="form-field description-field">
+            <label className="field-label" htmlFor="task-description">Description</label>
+            <textarea
+              id="task-description"
+              value={taskDescription}
+              onChange={(event) => setTaskDescription(event.target.value)}
+              className="form-input form-textarea"
+              placeholder="Add a few details to help your teammate get started..."
+              required
+            />
+            <div className="create-task-actions">
+              <button
+                type="submit"
+                className="primary-button"
+              >
+                Create assignment
+              </button>
+            </div>
+          </div>
         </div>
-
-        <div className="w-1/2">
-
-          <h3 className="text-sm text-gray-300 mb-1">
-            Description
-          </h3>
-
-          <textarea
-            value={taskDescription}
-            onChange={(e) => {
-              settaskDescription(e.target.value)
-            }}
-            className="text-sm py-2 px-2 w-full h-45 rounded outline-none bg-transparent border border-gray-400"
-            placeholder="Task description"
-          />
-
-          <button
-            className="bg-emerald-500 py-3 px-5 rounded text-sm mt-4 w-full hover:bg-emerald-700"
-          >
-            Create Task
-          </button>
-
-        </div>
-
       </form>
-
-    </div>
+      {feedback && (
+        <p className={error ? 'form-feedback form-feedback-error' : 'form-feedback'} role={error ? 'alert' : 'status'}>
+          {feedback}
+        </p>
+      )}
+    </section>
   )
 }
-
 
 export default CreateTask

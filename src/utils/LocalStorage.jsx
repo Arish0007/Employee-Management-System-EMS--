@@ -1,5 +1,3 @@
-localStorage.clear()
-
 const employees = [
   {
     id: 1,
@@ -325,16 +323,89 @@ const admin = [
   }
 ];
 
-export const setLocalStorage =()  => {
-    localStorage.setItem ('employees', JSON.stringify(employees))
-    localStorage.setItem ('admin', JSON.stringify(admin))  
-      
+export const setLocalStorage = () => {
+  const normalizedEmployees = normalizeEmployees(employees)
+  localStorage.setItem('employees', JSON.stringify(normalizedEmployees))
+  localStorage.setItem('admin', JSON.stringify(admin))
 }
-
 
 export const getLocalStorage = () => {
-    const employees = localStorage.getItem('employees')
-    const admin = localStorage.getItem('admin')
-    return {employees: JSON.parse(employees), admin: JSON.parse(admin)}
+  const storedEmployees = readStoredArray('employees', employees)
+  const storedAdmin = readStoredArray('admin', admin)
+  const normalizedEmployees = normalizeEmployees(storedEmployees)
+
+  localStorage.setItem('employees', JSON.stringify(normalizedEmployees))
+  localStorage.setItem('admin', JSON.stringify(storedAdmin))
+  return {
+    employees: normalizedEmployees,
+    admin: storedAdmin
+  }
 }
 
+const readStoredArray = (key, fallback) => {
+  const storedValue = localStorage.getItem(key)
+
+  if (!storedValue) {
+    return fallback
+  }
+
+  let parsedValue
+  try {
+    parsedValue = JSON.parse(storedValue)
+  } catch (error) {
+    if (error instanceof SyntaxError) {
+      throw new Error(`Saved ${key} data is not valid JSON. Clear that localStorage entry and reload.`, { cause: error })
+    }
+    throw error
+  }
+
+  if (!Array.isArray(parsedValue)) {
+    throw new Error(`Saved ${key} data must be an array. Clear that localStorage entry and reload.`)
+  }
+
+  return parsedValue
+}
+
+const normalizeEmployees = (employeeData) => {
+  if (!Array.isArray(employeeData)) {
+    throw new Error('Saved employee data must be an array.')
+  }
+
+  return employeeData.map((employee) => {
+    if (!employee || !Array.isArray(employee.tasks)) {
+      throw new Error('Saved employee data contains an invalid employee or task list.')
+    }
+
+    const tasks = employee.tasks.map((task, taskIndex) => {
+      if (!task || typeof task !== 'object') {
+        throw new Error('Saved employee data contains an invalid task.')
+      }
+
+      const status = ['active', 'newTask', 'completed', 'failed'].find((key) => task[key]) || 'newTask'
+
+      return {
+        ...task,
+        id: task.id || `legacy-${employee.id}-${taskIndex}`,
+        comments: Array.isArray(task.comments) ? task.comments : [],
+        completionNote: typeof task.completionNote === 'string' ? task.completionNote : '',
+        active: status === 'active',
+        newTask: status === 'newTask',
+        completed: status === 'completed',
+        failed: status === 'failed'
+      }
+    })
+
+    const taskNumber = tasks.reduce(
+      (counts, task) => {
+        if (task.active) counts.active += 1
+        else if (task.newTask) counts.newTask += 1
+        else if (task.completed) counts.completed += 1
+        else if (task.failed) counts.failed += 1
+        return counts
+      },
+      { active: 0, newTask: 0, completed: 0, failed: 0 }
+    )
+
+    return { ...employee, active: employee.active !== false, tasks, taskNumber }
+  })
+}

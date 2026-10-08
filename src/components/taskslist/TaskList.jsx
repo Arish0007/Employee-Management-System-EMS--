@@ -1,27 +1,24 @@
-import React from 'react'
-import AcceptTask from '../taskslist/AcceptTask'
-import NewTask from '../taskslist/NewTask'
-import CompleteTask from './CompleteTask'
-import FailedTask from './FailedTask'
-const TaskList = ({data}) => {
-    console.log(data);
+import { useContext } from 'react'
+import { AuthContext } from '../../context/AuthContext'
+import TaskCard from './TaskCard'
+
+const TaskList = ({ data }) => {
+  const { updateTaskStatus } = useContext(AuthContext)
+
+  if (data.tasks.length === 0) {
+    return <p className="empty-tasks">No assignments yet. New tasks will show up here.</p>
+  }
+
   return (
-    <div id='taskList' 
-    className='flex items-center justify-start gap-5 flex-nowrap h-[55%]  w-full overflow-x-auto py-5 mt-10' >
-      {data.tasks.map((elem,idx)=>{
-        if(elem.active){
-            return <AcceptTask key={idx} data={elem} />
-        }
-        if(elem.NewTask){
-            return <NewTask key={idx} data={elem} />
-        }
-        if(elem.completed){
-            return <CompleteTask key={idx} data={elem} />
-        }
-        if(elem.failed){
-            return <FailedTask key={idx} data={elem} />
-        }
-      })}
+    <div className="task-grid">
+      {data.tasks.map((task) => (
+        <TaskCard
+          key={task.id}
+          task={task}
+          employee={data}
+          onStatusChange={(status, note) => updateTaskStatus(data.id, task.id, status, note)}
+        />
+      ))}
     </div>
   )
 }
